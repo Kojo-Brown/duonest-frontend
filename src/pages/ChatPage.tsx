@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -7,7 +8,6 @@ import MessageList from "../components/MessageList";
 import MessageInput from "../components/MessageInput";
 import { api } from "../api/client";
 import { useSocket } from "../hooks/useSocket";
-import { useToast } from "../hooks/useToast";
 import { useRecentChats } from "../hooks/useRecentChats";
 import UserStatus from "../components/UserStatus";
 import ShareRoom from "../components/ShareRoom";
@@ -20,7 +20,6 @@ const ChatPage = () => {
   const [roomInfo, setRoomInfo] = useState<any>(null);
   const [joined, setJoined] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const [isJoining, setIsJoining] = useState(false);
   const [roomName, setRoomName] = useState<string>("");
   const [participantCount, setParticipantCount] = useState<number>(0);
   const [liveTypingUsers, setLiveTypingUsers] = useState<{
@@ -35,7 +34,6 @@ const ChatPage = () => {
   );
   const liveTypingTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
-  const { success, info } = useToast();
   const { addRecentChat, updateRoomInfo } = useRecentChats();
   const {
     socket,
@@ -84,13 +82,11 @@ const ChatPage = () => {
           await new Promise((resolve) => setTimeout(resolve, 1500));
 
           try {
-            const joinResponse = await api.joinRoom(roomId, userId);
             setJoined(true);
           } catch (joinError: any) {
             if (joinError.response?.status === 429) {
               // Retry after longer delay for rate limiting
               await new Promise((resolve) => setTimeout(resolve, 3000));
-              const retryResponse = await api.joinRoom(roomId, userId);
               setJoined(true);
             } else {
               throw joinError; // Re-throw other errors
@@ -193,7 +189,7 @@ const ChatPage = () => {
       setMessages((prev) => [...prev, newMessage]);
     };
 
-    const handleUserJoined = (data: any) => {
+    const handleUserJoined = () => {
       setError(null);
     };
 
@@ -469,43 +465,6 @@ const ChatPage = () => {
       return () => clearTimeout(timer);
     }
   }, [messages, joined, currentUserId, socket, roomId]);
-
-  const joinRoom = async () => {
-    if (!roomId || !currentUserId) {
-      setError("Missing room ID or user ID");
-      return;
-    }
-
-    try {
-      setIsJoining(true);
-      setError(null);
-      info("Joining room...");
-
-      // Join via API first
-      const response = await api.joinRoom(roomId, currentUserId);
-
-      // Join Socket.io room for real-time updates
-      joinSocketRoom(roomId);
-
-      setJoined(true);
-      setError(null);
-
-      // Add to recent chats
-      if (roomId) {
-        addRecentChat(roomId, roomName || `Room ${roomId}`);
-      }
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.error || err.message;
-      const fullError = `Failed to join room: ${errorMsg}`;
-      setError(fullError);
-
-      // Show temporary error notification
-      setNotification({ message: fullError, type: "error" });
-      setTimeout(() => setNotification(null), 3000);
-    } finally {
-      setIsJoining(false);
-    }
-  };
 
   const handleSendMessage = (content: string) => {
     if (!joined) {
