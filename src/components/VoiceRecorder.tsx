@@ -105,26 +105,26 @@ const VoiceRecorder = ({ onSendVoice, disabled = false }: VoiceRecorderProps) =>
   }
 
   return (
-    <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 max-w-full">
       {error && (
-        <div className="text-red-500 text-sm flex-1">
+        <div className="text-red-500 text-sm w-full">
           {error}
         </div>
       )}
       
       {!error && (
         <>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {isRecording && !isPaused && (
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
             )}
             
-            <span className="text-sm font-mono text-gray-700 dark:text-gray-300 min-w-[40px]">
+            <span className="text-sm font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap">
               {formatTime(recordingTime)}
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {!isRecording && !audioBlob && (
               <button
                 type="button"
@@ -181,18 +181,18 @@ const VoiceRecorder = ({ onSendVoice, disabled = false }: VoiceRecorderProps) =>
           </div>
 
           {audioBlob && audioUrl && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
               <audio
                 src={audioUrl}
                 controls
-                className="h-8 max-w-[150px]"
+                className="h-8 w-full sm:w-auto sm:max-w-[120px] min-w-0"
               />
               
               <button
                 type="button"
                 onClick={handleSendVoice}
                 disabled={disabled}
-                className="p-1 text-blue-500 hover:text-blue-600 disabled:opacity-50 transition-colors"
+                className="p-1 text-blue-500 hover:text-blue-600 disabled:opacity-50 transition-colors flex-shrink-0"
                 title="Send voice message"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -206,7 +206,7 @@ const VoiceRecorder = ({ onSendVoice, disabled = false }: VoiceRecorderProps) =>
           <button
             type="button"
             onClick={handleCancel}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors ml-auto"
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors sm:ml-auto flex-shrink-0"
             title="Cancel"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>

@@ -25,7 +25,22 @@ interface SocketProviderProps {
   children: React.ReactNode;
 }
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+// const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+
+const getSocketURL = () => {
+  // Production
+  if (import.meta.env.PROD) {
+    return (
+      import.meta.env.VITE_SOCKET_URL ||
+      "https://duonest-backend-production.up.railway.app"
+    );
+  }
+
+  // Development
+  return import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+};
+
+const SOCKET_URL = getSocketURL();
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
