@@ -1,59 +1,61 @@
-import type { MessageStatus } from '../types'
+import type { MessageStatus } from "../types";
 
 interface MessageStatusProps {
-  status: MessageStatus
-  className?: string
+  status: MessageStatus;
+  className?: string;
 }
 
-const MessageStatus = ({ status, className = '' }: MessageStatusProps) => {
-  console.log('MessageStatus rendering with status:', status);
-  
-  const getStatusText = () => {
+const MessageStatusComponent = ({ status, className = "" }: MessageStatusProps) => {
+  const getStatusIcon = () => {
     switch (status) {
-      case 'sending':
+      case "sending":
         return (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Sending...
-          </span>
-        )
-      case 'sent':
+          <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+        );
+      case "sent":
         return (
-          <span className="text-xs text-gray-600 dark:text-gray-300">
-            Sent
-          </span>
-        )
-      case 'delivered':
+          <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        );
+      case "delivered":
         return (
-          <span className="text-xs text-gray-600 dark:text-gray-300">
-            Delivered
-          </span>
-        )
-      case 'seen':
+          <div className="relative">
+            <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <svg className="w-4 h-4 text-gray-500 absolute -right-1 top-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        );
+      case "seen":
         return (
-          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-            Seen
-          </span>
-        )
-      case 'failed':
+          <div className="relative">
+            <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <svg className="w-4 h-4 text-blue-500 absolute -right-1 top-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        );
+      case "failed":
         return (
-          <span className="text-xs text-red-500 dark:text-red-400">
-            Failed
-          </span>
-        )
+          <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        );
       default:
         return (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Not sent
-          </span>
-        )
+          <div className="w-3 h-3 border border-gray-400 rounded-full" />
+        );
     }
-  }
+  };
 
   return (
-    <div className={`flex items-center ${className}`}>
-      {getStatusText()}
-    </div>
-  )
-}
+    <div className={`flex items-center ${className}`}>{getStatusIcon()}</div>
+  );
+};
 
-export default MessageStatus
+export default MessageStatusComponent;

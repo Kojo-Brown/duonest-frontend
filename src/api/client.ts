@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -54,20 +55,39 @@ export const api = {
     apiClient.get(`/c/${roomId}`).then((res) => res.data),
 
   getRoomMessages: (roomId: string, userId: string) =>
-    apiClient.get(`/c/${roomId}/messages?userId=${userId}`).then((res) => res.data),
+    apiClient
+      .get(`/c/${roomId}/messages?userId=${userId}`)
+      .then((res) => res.data),
+
+  sendVoiceMessage: (formData: FormData, userId: string) => {
+    formData.append("userId", userId);
+    return apiClient
+      .post("/voice-message", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((res) => res.data);
+  },
 
   // Recent chats methods
   getRecentChats: (userId: string) =>
     apiClient.get(`/recent-chats/${userId}`).then((res) => res.data),
 
   addRecentChat: (userId: string, roomId: string, roomName?: string) =>
-    apiClient.post('/recent-chats', { userId, roomId, roomName }).then((res) => res.data),
+    apiClient
+      .post("/recent-chats", { userId, roomId, roomName })
+      .then((res) => res.data),
 
   updateRecentChat: (userId: string, roomId: string, updates: any) =>
-    apiClient.put(`/recent-chats/${userId}/${roomId}`, updates).then((res) => res.data),
+    apiClient
+      .put(`/recent-chats/${userId}/${roomId}`, updates)
+      .then((res) => res.data),
 
   removeRecentChat: (userId: string, roomId: string) =>
-    apiClient.delete(`/recent-chats/${userId}/${roomId}`).then((res) => res.data),
+    apiClient
+      .delete(`/recent-chats/${userId}/${roomId}`)
+      .then((res) => res.data),
 
   // Health check
   healthCheck: () =>

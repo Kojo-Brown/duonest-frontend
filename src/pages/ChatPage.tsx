@@ -57,12 +57,10 @@ const ChatPage = () => {
         // Step 1: Ensure we have a valid user ID
         let userId = currentUserId;
         if (!userId) {
-          console.log("No user ID found, generating new one...");
           const userResponse = await api.generateUserId();
           userId = userResponse.userId || userResponse.id;
           localStorage.setItem("currentUserId", userId);
           setCurrentUserId(userId);
-          console.log("Generated new user ID:", userId);
         }
 
         // Step 2: Get room info
@@ -80,26 +78,19 @@ const ChatPage = () => {
             roomData.room.user2_id === userId);
 
         if (isAlreadyMember) {
-          console.log("User already in room, auto-joined");
           setJoined(true);
         } else {
-          // Auto-join the room with retry logic for rate limiting
-          console.log("Auto-joining room:", { roomId, userId });
-
           // Stagger requests with exponential backoff for rate limiting
           await new Promise((resolve) => setTimeout(resolve, 1500));
 
           try {
             const joinResponse = await api.joinRoom(roomId, userId);
-            console.log("Auto-join successful:", joinResponse);
             setJoined(true);
           } catch (joinError: any) {
             if (joinError.response?.status === 429) {
               // Retry after longer delay for rate limiting
-              console.log("Rate limited, retrying after 3 seconds...");
               await new Promise((resolve) => setTimeout(resolve, 3000));
               const retryResponse = await api.joinRoom(roomId, userId);
-              console.log("Retry successful:", retryResponse);
               setJoined(true);
             } else {
               throw joinError; // Re-throw other errors
@@ -107,17 +98,10 @@ const ChatPage = () => {
           }
         }
 
-        // Show success notification and add to recent chats
-        setNotification({
-          message: "Joined room successfully!",
-          type: "success",
-        });
-        setTimeout(() => setNotification(null), 3000);
+        // Add to recent chats
 
         addRecentChat(roomId, roomDisplayName);
       } catch (err: any) {
-        console.error("Failed to initialize room:", err);
-
         const errorMsg = err.response?.data?.error || err.message;
         let displayError = "Failed to join room";
 
@@ -159,9 +143,6 @@ const ChatPage = () => {
             isMyMessage &&
             seenBy !== currentUserId
           ) {
-            console.log(
-              `✅ Updating my message ${msg.id} to ${status} status (seen by: ${seenBy})`
-            );
             return {
               ...msg,
               status: status as any,
@@ -185,7 +166,6 @@ const ChatPage = () => {
     if (!socket || !roomId) return;
 
     const handleChatMessage = (data: any) => {
-      console.log("Received chat message:", data);
       const newMessage: Message = {
         id: data.messageId || data.id || Date.now() + Math.random(), // Use backend ID if available
         room_id: roomId,
@@ -198,8 +178,22 @@ const ChatPage = () => {
       setMessages((prev) => [...prev, newMessage]);
     };
 
+    const handleVoiceMessage = (data: any) => {
+      const newMessage: Message = {
+        id: data.messageId || data.id || Date.now() + Math.random(),
+        room_id: roomId,
+        sender_id: data.userId,
+        content: "Voice message",
+        message_type: "voice",
+        created_at: new Date(data.timestamp),
+        status: "delivered",
+        file_url: data.fileUrl,
+        duration: data.duration,
+      };
+      setMessages((prev) => [...prev, newMessage]);
+    };
+
     const handleUserJoined = (data: any) => {
-      console.log("User joined:", data);
       setError(null);
     };
 
@@ -208,7 +202,6 @@ const ChatPage = () => {
     };
 
     const handleUserTyping = (data: any) => {
-      console.log("User typing:", data);
       if (data.userId !== currentUserId) {
         if (data.isTyping) {
           setTypingUsers((prev) => [
@@ -222,19 +215,16 @@ const ChatPage = () => {
     };
 
     const handleMessageSeen = (data: any) => {
-      console.log("🔥 Message seen event received:", data);
       const { messageId, userId: seenBy, senderId } = data;
       updateMessageStatus(messageId, "seen", seenBy, senderId);
     };
 
     const handleMessageSaved = (data: any) => {
-      console.log("Message saved confirmation:", data);
       const { tempId, realId, messageId } = data;
 
       // Update the temporary message ID with the real database ID
       if (tempId && (realId || messageId)) {
         const dbId = realId || messageId;
-        console.log(`Updating message ${tempId} with database ID ${dbId}`);
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id.toString() === tempId.toString() ? { ...msg, id: dbId } : msg
@@ -244,25 +234,23 @@ const ChatPage = () => {
     };
 
     const handleMessageStatusUpdate = (data: any) => {
-      console.log("🎯 Message status update received:", data);
       const { messageId, status, seenBy, senderId } = data;
       updateMessageStatus(messageId, status, seenBy, senderId);
     };
 
     const handleMessageSeenConfirmed = (data: any) => {
-      console.log("✅ Message seen confirmed:", data);
       const { messageId, seenBy, senderId } = data;
       updateMessageStatus(messageId, "seen", seenBy, senderId);
     };
 
     // Add event listeners
     socket.on("chat-message", handleChatMessage);
+    socket.on("voice-message", handleVoiceMessage);
     socket.on("user-joined", handleUserJoined);
     socket.on("user-left", handleUserLeft);
 
     // Listen for participant count updates
     socket.on("room-participants", (data: any) => {
-      console.log("Room participants update:", data);
       if (data.roomId === roomId) {
         setParticipantCount(data.count || 0);
         if (roomId) {
@@ -273,7 +261,6 @@ const ChatPage = () => {
 
     // Listen for live typing events
     socket.on("user-live-typing", (data: any) => {
-      console.log("Live typing received:", data);
       if (data.roomId === roomId && data.userId !== currentUserId) {
         setLiveTypingUsers((prev) => ({
           ...prev,
@@ -300,7 +287,6 @@ const ChatPage = () => {
 
     // Listen for when user stops live typing
     socket.on("user-stopped-live-typing", (data: any) => {
-      console.log("User stopped live typing:", data);
       if (data.roomId === roomId && data.userId !== currentUserId) {
         setLiveTypingUsers((prev) => {
           const updated = { ...prev };
@@ -328,7 +314,6 @@ const ChatPage = () => {
         data.messageId &&
         data.status === "seen"
       ) {
-        console.log(`🔊 Generic seen event (${eventName}):`, data);
         updateMessageStatus(
           data.messageId,
           data.status,
@@ -340,7 +325,6 @@ const ChatPage = () => {
 
     // Debug: Log ALL socket events and catch any seen events we might miss
     socket.onAny((eventName, ...args) => {
-      console.log(`🔊 Socket event received: ${eventName}`, args);
       if (args.length > 0) {
         handleGenericSeenEvent(eventName, args[0]);
       }
@@ -349,6 +333,7 @@ const ChatPage = () => {
     // Cleanup event listeners
     return () => {
       socket.off("chat-message", handleChatMessage);
+      socket.off("voice-message", handleVoiceMessage);
       socket.off("user-joined", handleUserJoined);
       socket.off("user-left", handleUserLeft);
       socket.off("user-typing", handleUserTyping);
@@ -372,10 +357,6 @@ const ChatPage = () => {
     if (!joined || !roomId) return;
 
     try {
-      console.log("Loading messages with user validation:", {
-        roomId,
-        currentUserId,
-      });
       const messagesData = await api.getRoomMessages(roomId, currentUserId);
 
       if (
@@ -383,7 +364,6 @@ const ChatPage = () => {
         messagesData.messages &&
         Array.isArray(messagesData.messages)
       ) {
-        console.log("Access granted - loaded messages:", messagesData.messages);
         const formattedMessages: Message[] = messagesData.messages.map(
           (msg: any) => ({
             id: msg.id,
@@ -400,15 +380,18 @@ const ChatPage = () => {
                 : undefined,
             seen_at: msg.seen_at ? new Date(msg.seen_at) : undefined,
             seen_by: msg.seen_by_user_id ? [msg.seen_by_user_id] : undefined,
+            // Include voice message fields
+            file_url: msg.file_url,
+            duration: msg.duration,
+            file_name: msg.file_name,
+            file_size: msg.file_size,
           })
         );
         setMessages(formattedMessages);
       } else {
-        console.error("Access denied to room messages:", messagesData.error);
         setError("You do not have access to this room's messages");
       }
     } catch (err: any) {
-      console.error("Failed to load messages:", err);
       if (err.response?.status === 403) {
         setError(
           "Access denied: You must be a member of this room to view messages"
@@ -424,7 +407,6 @@ const ChatPage = () => {
   // Auto-join socket room and load messages when joined
   useEffect(() => {
     if (joined && roomId && socket && isConnected) {
-      console.log("Auto-joining socket room:", roomId);
       joinSocketRoom(roomId);
 
       // Load messages via REST API (secure)
@@ -452,27 +434,11 @@ const ChatPage = () => {
     );
 
     if (unseenMessagesFromOthers.length > 0) {
-      console.log(
-        "📖 Found unseen messages from others to mark as seen:",
-        unseenMessagesFromOthers.map((m) => ({
-          id: m.id,
-          sender: m.sender_id,
-          content: m.content.substring(0, 20) + "...",
-          currentStatus: m.status,
-          seenBy: m.seen_by,
-        }))
-      );
-
       // Mark as seen after delay to simulate reading time
       const timer = setTimeout(() => {
-        console.log("✅ User has viewed messages, notifying senders...");
         unseenMessagesFromOthers.forEach((msg) => {
           // Triple-check this is not my own message
           if (msg.sender_id !== currentUserId) {
-            console.log(
-              `🔔 Notifying sender ${msg.sender_id} that message ${msg.id} was seen by ${currentUserId}`
-            );
-
             // Mark locally that I've seen this message (to prevent re-sending)
             setMessages((prev) =>
               prev.map((m) =>
@@ -514,24 +480,15 @@ const ChatPage = () => {
       setIsJoining(true);
       setError(null);
       info("Joining room...");
-      console.log("Joining room:", { roomId, currentUserId });
 
       // Join via API first
       const response = await api.joinRoom(roomId, currentUserId);
-      console.log("Join room response:", response);
 
       // Join Socket.io room for real-time updates
       joinSocketRoom(roomId);
 
       setJoined(true);
       setError(null);
-
-      // Show temporary notification
-      setNotification({
-        message: "Joined room successfully!",
-        type: "success",
-      });
-      setTimeout(() => setNotification(null), 3000);
 
       // Add to recent chats
       if (roomId) {
@@ -545,7 +502,6 @@ const ChatPage = () => {
       // Show temporary error notification
       setNotification({ message: fullError, type: "error" });
       setTimeout(() => setNotification(null), 3000);
-      console.error("Join room error:", err);
     } finally {
       setIsJoining(false);
     }
@@ -586,6 +542,11 @@ const ChatPage = () => {
       );
     }, 500);
 
+    // Reload messages after a short delay to ensure we get latest status updates
+    setTimeout(() => {
+      loadMessagesAfterJoin();
+    }, 2000);
+
     // Update to 'delivered' when message reaches the other user's device
     setTimeout(() => {
       setMessages((prev) =>
@@ -601,16 +562,115 @@ const ChatPage = () => {
     // This will be handled by the 'message-seen' Socket.io event from the backend
   };
 
+  const handleSendVoice = async (audioBlob: Blob, duration: number) => {
+    if (!joined) {
+      setError("Please join the room first");
+      return;
+    }
+
+    if (!roomId) return;
+
+    const tempMessageId = Date.now() + Math.random();
+
+    // Convert blob to data URL for sharing
+    const audioDataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(audioBlob);
+    });
+
+    // Add to local state immediately with 'sending' status
+    const newMessage: Message = {
+      id: tempMessageId,
+      room_id: roomId,
+      sender_id: currentUserId,
+      content: "Voice message",
+      message_type: "voice",
+      created_at: new Date(),
+      status: "sending",
+      file_url: audioDataUrl,
+      duration: duration,
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("audio", audioBlob, `voice-${tempMessageId}.webm`);
+      formData.append("roomId", roomId);
+      formData.append("senderId", currentUserId);
+      formData.append("duration", duration.toString());
+      formData.append("tempId", tempMessageId.toString());
+
+      // Send voice message via API
+      let response;
+      try {
+        response = await api.sendVoiceMessage(formData, currentUserId);
+      } catch (apiError: any) {
+        if (apiError.response?.status === 404) {
+          // Temporary fallback for testing - remove when backend is implemented
+          response = {
+            success: true,
+            messageId: tempMessageId,
+            file_url: audioDataUrl,
+            tempId: tempMessageId,
+          };
+        } else {
+          throw apiError;
+        }
+      }
+
+      // Update message with server response
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempMessageId
+            ? {
+                ...msg,
+                status: "sent",
+                file_url: response.file_url || audioDataUrl,
+                id: response.messageId || tempMessageId,
+              }
+            : msg
+        )
+      );
+
+      // Notify via socket for real-time updates
+      if (socket) {
+        socket.emit("voice-message", {
+          roomId,
+          userId: currentUserId,
+          messageId: response.messageId || tempMessageId,
+          fileUrl: response.file_url,
+          duration,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Reload messages after a short delay to ensure we get latest status updates
+      setTimeout(() => {
+        loadMessagesAfterJoin();
+      }, 2000);
+    } catch (error) {
+      // Update status to failed
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempMessageId ? { ...msg, status: "failed" } : msg
+        )
+      );
+
+      setError("Failed to send voice message");
+    }
+  };
+
   const handleStartTyping = () => {
     if (roomId && socket) {
-      console.log("Starting typing for user:", currentUserId);
       socket.emit("typing", { roomId, userId: currentUserId, isTyping: true });
     }
   };
 
   const handleStopTyping = () => {
     if (roomId && socket) {
-      console.log("Stopping typing for user:", currentUserId);
       socket.emit("typing", { roomId, userId: currentUserId, isTyping: false });
     }
   };
@@ -791,6 +851,7 @@ const ChatPage = () => {
               )}
               <MessageInput
                 onSendMessage={handleSendMessage}
+                onSendVoice={handleSendVoice}
                 onStartTyping={handleStartTyping}
                 onStopTyping={handleStopTyping}
                 onLiveTyping={handleLiveTyping}

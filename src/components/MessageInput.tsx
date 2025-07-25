@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import VoiceRecorder from './VoiceRecorder'
 
 interface LiveTypingData {
   content?: string
@@ -9,13 +10,14 @@ interface LiveTypingData {
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void
+  onSendVoice?: (audioBlob: Blob, duration: number) => void
   onStartTyping?: () => void
   onStopTyping?: () => void
   onLiveTyping?: (data: LiveTypingData) => void
   disabled?: boolean
 }
 
-const MessageInput = ({ onSendMessage, onStartTyping, onStopTyping, onLiveTyping, disabled = false }: MessageInputProps) => {
+const MessageInput = ({ onSendMessage, onSendVoice, onStartTyping, onStopTyping, onLiveTyping, disabled = false }: MessageInputProps) => {
   const [message, setMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const typingTimeoutRef = useRef<number | null>(null)
@@ -134,15 +136,23 @@ const MessageInput = ({ onSendMessage, onStartTyping, onStopTyping, onLiveTyping
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-      <input
-        type="text"
-        value={message}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder="Type a message..."
-        disabled={disabled}
-        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500"
-      />
+      <div className="flex-1 flex gap-2">
+        <input
+          type="text"
+          value={message}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a message..."
+          disabled={disabled}
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500"
+        />
+        {onSendVoice && (
+          <VoiceRecorder 
+            onSendVoice={onSendVoice}
+            disabled={disabled}
+          />
+        )}
+      </div>
       <button
         type="submit"
         disabled={disabled || !message.trim()}
