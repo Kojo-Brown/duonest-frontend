@@ -7,8 +7,9 @@ A real-time chat application built with React, TypeScript, and Socket.io for sea
 ### 🚀 Core Chat Features
 
 - **Real-time messaging** - Instant message delivery using Socket.io
+- **Voice messages** - Record and send voice notes with waveform visualization
 - **Room-based chat** - Create or join specific chat rooms
-- **Message status tracking** - See when messages are sent, delivered, and seen
+- **Message status tracking** - Visual check marks (✓✓) with colors for sent/delivered/seen
 - **Live typing indicators** - Real-time typing status and content preview
 - **User presence** - Online/offline status for participants
 
@@ -24,6 +25,8 @@ A real-time chat application built with React, TypeScript, and Socket.io for sea
 - **Responsive design** - Works on desktop and mobile devices
 - **Room sharing** - Easy room invitation system
 - **Connection status** - Visual indicators for network connectivity
+- **Audio waveform** - Visual representation of voice message content
+- **WhatsApp-style UI** - Familiar chat interface with modern design
 
 ### 📱 Advanced Features
 
@@ -31,6 +34,9 @@ A real-time chat application built with React, TypeScript, and Socket.io for sea
 - **Message persistence** - Chat history loaded when rejoining rooms
 - **Rate limiting handling** - Graceful handling of API rate limits
 - **Auto-reconnection** - Automatic socket reconnection on network issues
+- **Voice recording** - Built-in microphone recording with duration display
+- **Audio playback** - Play voice messages with progress tracking
+- **Real-time status sync** - Automatic message status updates without page refresh
 
 ## Tech Stack
 
@@ -104,8 +110,11 @@ src/
 - **HomePage** - Landing page with room creation/joining
 - **ChatPage** - Main chat interface with real-time messaging
 - **UserPage** - User dashboard and management
-- **MessageInput** - Input component with live typing
-- **MessageList** - Message display with status indicators
+- **MessageInput** - Input component with live typing and voice recording
+- **MessageList** - Message display with status indicators and voice playback
+- **AudioPlayer** - Voice message player with waveform visualization
+- **VoiceRecorder** - Voice recording component with real-time feedback
+- **MessageStatus** - Visual status indicators with colored check marks
 - **RecentChats** - Persistent chat history
 
 ### Core Hooks
@@ -114,6 +123,7 @@ src/
 - **useToast** - Toast notification system
 - **useRecentChats** - Local storage chat history
 - **useTheme** - Dark/light mode management
+- **useVoiceRecorder** - Voice recording functionality with WebRTC API
 
 ## Usage
 
@@ -131,10 +141,21 @@ src/
 
 ### Message Features
 
-- **Send messages** - Type and press Enter or click Send
+- **Send text messages** - Type and press Enter or click Send
+- **Send voice messages** - Hold microphone button to record, release to send
 - **Live typing** - See what others are typing in real-time
-- **Message status** - Track delivery and read receipts
+- **Message status** - Visual check marks showing sent (✓), delivered (✓✓), and seen (blue ✓✓)
+- **Voice playback** - Click play button to listen to voice messages with waveform progress
 - **Room sharing** - Use the share button to invite others
+
+### Voice Message Features
+
+- **Record audio** - Press and hold the microphone button
+- **Real-time duration** - See recording time while recording
+- **Waveform display** - Visual representation of audio content
+- **Duration display** - Shows total duration when not playing, current time when playing
+- **Progress tracking** - Waveform bars fill as audio plays
+- **Click to seek** - Click anywhere on waveform to jump to that position
 
 ## Configuration
 
@@ -147,19 +168,35 @@ src/
 
 The frontend expects a backend server with the following endpoints:
 
+#### REST API Endpoints
 - `GET /api/generate-user-id` - Generate new user ID
 - `POST /api/u/:userId/create-room` - Create new chat room
 - `POST /api/c/:roomId/join` - Join existing room
 - `GET /api/c/:roomId` - Get room information
 - `GET /api/c/:roomId/messages` - Get room messages
-- Socket.io events for real-time communication
+- `POST /api/voice-message` - Upload voice message (multipart/form-data)
+
+#### Static File Serving
+- `GET /uploads/voice/:filename` - Serve voice message files with CORS headers
+
+#### Socket.io Events
+- `chat-message` - Real-time text message delivery
+- `voice-message` - Real-time voice message notification
+- `message-seen` - Message read receipt updates
+- `typing` - Typing indicator events
+- `user-joined` / `user-left` - User presence updates
 
 ## Browser Support
 
-- Chrome/Edge 88+
-- Firefox 85+
-- Safari 14+
-- Mobile browsers with WebSocket support
+- Chrome/Edge 88+ (Required for voice recording)
+- Firefox 85+ (Required for voice recording)
+- Safari 14+ (Required for voice recording)
+- Mobile browsers with WebSocket and WebRTC support
+
+### Voice Message Requirements
+- Microphone access permission
+- WebRTC MediaRecorder API support
+- Modern browser with getUserMedia() support
 
 ## Contributing
 
